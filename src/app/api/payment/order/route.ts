@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { userManager } from '@/storage/database';
 import { alipayPayment } from '@/lib/payment/alipay';
-import { wechatPayment } from '@/lib/payment/wechat';
 import type { UpdateUser } from '@/storage/database/shared/schema';
 
 interface Plan {
@@ -155,39 +154,11 @@ export async function POST(request: NextRequest) {
         }
       }
     } else if (paymentMethod === 'wechat') {
-      try {
-        // 微信支付 - H5 支付
-        const result = await wechatPayment.createH5PayOrder({
-          outTradeNo: orderId,
-          totalFee: Math.round(amount * 100), // 转换为分
-          description: planName,
-          notifyUrl: `${baseUrl}/api/payment/callback/wechat`,
-          sceneInfo: {
-            payer_client_ip: request.headers.get('x-forwarded-for') || '127.0.0.1',
-            h5_info: {
-              type: 'Wap',
-              app_name: '天机阁',
-              app_url: baseUrl,
-            },
-          },
-        });
-
-        paymentUrl = result.h5_url;
-
-        console.log('[Payment] 微信支付订单创建成功:', orderId);
-      } catch (error) {
-        console.error('[Payment] 微信支付订单创建失败:', error);
-
-        // 如果微信支付配置不完整，使用模拟支付
-        if (!process.env.WECHAT_PAY_MCH_ID || !process.env.WECHAT_PAY_API_KEY) {
-          console.warn('[Payment] 微信支付配置不完整，使用模拟支付');
-
-          // 模拟支付 URL（开发环境）
-          paymentUrl = `${baseUrl}/api/payment/mock?orderId=${orderId}&method=wechat`;
-        } else {
-          throw error;
-        }
-      }
+      // 暂时禁用微信支付
+      return NextResponse.json(
+        { error: '微信支付暂时不可用' },
+        { status: 400 }
+      );
     }
 
     return NextResponse.json({
