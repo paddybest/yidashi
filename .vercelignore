@@ -1,0 +1,13 @@
+.git
+.gitignore
+.env*.local
+node_modules
+.tmp
+tmp
+*.log
+.vercel
+coverage
+*.md
+scripts/build.sh
+scripts/dev.sh
+scripts/start.sh

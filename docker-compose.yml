@@ -1,0 +1,87 @@
+version: '3.8'
+
+services:
+  # PostgreSQL 数据库
+  postgres:
+    image: postgres:16-alpine
+    container_name: tianjige-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: tianjige
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-tianjige_password}
+      POSTGRES_DB: tianjige
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U tianjige"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Next.js 应用
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: tianjige-app
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    environment:
+      - NODE_ENV=production
+      - PORT=5000
+      - DATABASE_URL=postgresql://tianjige:${POSTGRES_PASSWORD:-tianjige_password}@postgres:5432/tianjige
+      # AI 配置
+      - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY}
+      - DEEPSEEK_BASE_URL=${DEEPSEEK_BASE_URL:-https://api.deepseek.com}
+      # 管理员配置
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD}
+      # 阿里云短信配置
+      - SMS_ACCESS_KEY_ID=${SMS_ACCESS_KEY_ID}
+      - SMS_ACCESS_KEY_SECRET=${SMS_ACCESS_KEY_SECRET}
+      - SMS_SIGN_NAME=${SMS_SIGN_NAME}
+      - SMS_TEMPLATE_CODE=${SMS_TEMPLATE_CODE}
+      # 微信支付配置
+      - WECHAT_PAY_MCH_ID=${WECHAT_PAY_MCH_ID}
+      - WECHAT_PAY_API_KEY=${WECHAT_PAY_API_KEY}
+      - WECHAT_PAY_NOTIFY_URL=${WECHAT_PAY_NOTIFY_URL}
+      # 支付宝配置
+      - ALIPAY_APP_ID=${ALIPAY_APP_ID}
+      - ALIPAY_PRIVATE_KEY=${ALIPAY_PRIVATE_KEY}
+      - ALIPAY_PUBLIC_KEY=${ALIPAY_PUBLIC_KEY}
+      - ALIPAY_GATEWAY=${ALIPAY_GATEWAY:-https://openapi.alipay.com/gateway.do}
+      - ALIPAY_NOTIFY_URL=${ALIPAY_NOTIFY_URL}
+      # 安全配置
+      - SHOW_VERIFICATION_CODE=${SHOW_VERIFICATION_CODE:-false}
+      # 域名配置
+      - NEXT_PUBLIC_BASE_URL=${NEXT_PUBLIC_BASE_URL}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./logs:/app/logs
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:5000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Nginx（可选，用于反向代理和 SSL）
+  nginx:
+    image: nginx:alpine
+    container_name: tianjige-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - app
+
+volumes:
+  postgres_data:
+    driver: local
