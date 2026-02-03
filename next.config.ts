@@ -7,11 +7,12 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const nextConfig: NextConfig = {
-  // 启用 standalone 模式（Vercel 推荐）
-  output: 'standalone',
+  // 本地开发时不使用 standalone 模式
+  // 部署到 Vercel 时会自动启用 standalone
+  output: undefined,
 
   // 取消注释并配置依赖追踪
-  outputFileTracingRoot: path.resolve(__dirname, '../../'),
+  // outputFileTracingRoot: path.resolve(__dirname, '../../'),
 
   allowedDevOrigins: ['*.dev.coze.site'],
   images: {
