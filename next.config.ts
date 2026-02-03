@@ -7,14 +7,10 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const nextConfig: NextConfig = {
-  // 本地开发时不使用 standalone 模式
-  // 部署到 Vercel 时会自动启用 standalone
-  output: undefined,
+  // Vercel 会自动处理 standalone 模式
+  output: 'standalone',
 
-  // 取消注释并配置依赖追踪
-  // outputFileTracingRoot: path.resolve(__dirname, '../../'),
-
-  allowedDevOrigins: ['*.dev.coze.site'],
+  // 配置图片域名
   images: {
     remotePatterns: [
       {
@@ -24,6 +20,16 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+
+  // 允许的开发域名
+  async rewrites() {
+    return [
+      {
+        source: '/api/:path*',
+        destination: '/api/:path*',
+      },
+    ]
+  }
 };
 
 export default nextConfig;

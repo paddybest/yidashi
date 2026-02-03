@@ -1,7 +1,7 @@
 {
-  "buildCommand": "next build",
-  "devCommand": "next dev -p 5000",
-  "installCommand": "pnpm install --frozen-lockfile",
+  "buildCommand": "pnpm build",
+  "devCommand": "pnpm dev -p 5000",
+  "installCommand": "pnpm install",
   "framework": "nextjs",
   "outputDirectory": ".next",
   "regions": ["hkg1"],
