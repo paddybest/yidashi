@@ -70,7 +70,7 @@ createdb tianjige
 项目已经配置好了本地数据库连接，在 `.env.local` 中：
 
 ```env
-PGDATABASE_URL=postgresql://postgres:tianjige_password@localhost:5432/tianjige
+DATABASE_URL=postgresql://postgres:tianjige_password@localhost:5432/tianjige
 ```
 
 ### 初始化数据库

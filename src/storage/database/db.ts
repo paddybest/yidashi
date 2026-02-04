@@ -2,7 +2,7 @@ import { Client } from 'pg';
 
 // 创建数据库客户端
 const client = new Client({
-  connectionString: process.env.PGDATABASE_URL,
+  connectionString: process.env.DATABASE_URL,
 });
 
 // 连接数据库

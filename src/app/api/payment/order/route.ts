@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { userManager } from '@/storage/database';
+import { db } from '@/storage/database/db';
 import { alipayPayment } from '@/lib/payment/alipay';
 import type { UpdateUser } from '@/storage/database/shared/schema';
 
@@ -83,7 +84,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 检查是否需要更新用户信息
-    const isExpired = user.expiresAt ? userManager.isUserExpired(user) : false;
+    const isExpired = user.expiresAt ? new Date() > user.expiresAt : false;
 
     if (!user.expiresAt || isExpired) {
       // 用户未激活或已过期，保存用户信息
@@ -110,6 +111,19 @@ export async function POST(request: NextRequest) {
     const returnUrl = `${baseUrl}/purchase/success?orderId=${orderId}`;
 
     console.log(`[Payment] Creating order: ${orderId}, amount: ${amount}, method: ${paymentMethod}`);
+
+    // 保存订单信息到用户表的临时字段
+    await db.query(
+      `UPDATE users
+       SET current_order_id = $1,
+           current_order_plan = $2,
+           current_order_amount = $3,
+           current_order_status = 'pending',
+           current_order_payment_method = $4,
+           updated_at = NOW()
+       WHERE id = $5`,
+      [orderId, planId, amount, paymentMethod, userId]
+    );
 
     let paymentUrl = '';
     let orderData: any = {

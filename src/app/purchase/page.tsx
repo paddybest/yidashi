@@ -136,16 +136,17 @@ export default function PurchasePage() {
       // 模拟支付延迟
       setTimeout(async () => {
         try {
-          // 调用支付回调接口
-          const payResponse = await fetch('/api/payment/callback', {
+  // 调用支付宝模拟回调接口
+          const payResponse = await fetch(`/api/payment/callback/alipay`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-              orderId: result.order.orderId,
-              transactionId: 'TX' + Date.now(),
-              status: 'success',
+              out_trade_no: result.order.orderId,
+              trade_status: 'TRADE_SUCCESS',
+              total_amount: result.order.amount.toString(),
+              gmt_payment: new Date().toISOString(),
             }),
           });
 

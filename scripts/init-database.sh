@@ -12,17 +12,17 @@ if ! command -v psql &> /dev/null; then
 fi
 
 # 从环境变量解析数据库配置
-if [ -z "$PGDATABASE_URL" ]; then
-    echo "❌ 请先在 .env.local 中设置 PGDATABASE_URL"
+if [ -z "$DATABASE_URL" ]; then
+    echo "❌ 请先在 .env.local 中设置 DATABASE_URL"
     echo "格式: postgresql://用户名:密码@主机:端口/数据库名"
     exit 1
 fi
 
 # 解析数据库连接字符串
-DB_URL=$(echo $PGDATABASE_URL | sed 's/postgresql:\/\///')
+DB_URL=$(echo $DATABASE_URL | sed 's/postgresql:\/\///')
 DB_USER=$(echo $DB_URL | sed 's/@.*//')
 DB_HOST_PORT=$(echo $DB_URL | sed "s/$DB_USER@//" | sed 's/\/.*//')
-DB_NAME=$(echo $PGDATABASE_URL | sed 's/.*\/\([^/]*\)$/\1/')
+DB_NAME=$(echo $DATABASE_URL | sed 's/.*\/\([^/]*\)$/\1/')
 
 echo "📊 数据库信息:"
 echo "   数据库名: $DB_NAME"
