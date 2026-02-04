@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
     }
 
     // 检查激活名单
-    const isInActivationList = await activationListManager.isPhoneNumberActivated(phoneNumber);
+    const isInActivationList = await activationListManager.isUserActivated(phoneNumber);
     
     // 获取激活名单中的所有手机号
     const activationList = await activationListManager.getActivationList({ limit: 100 });

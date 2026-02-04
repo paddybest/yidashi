@@ -1,9 +1,5 @@
-import { eq, desc, and, SQL, gt, sql } from "drizzle-orm";
 import { db } from "@/storage/database/db";
 import {
-  users,
-  conversations,
-  activationList,
   insertUserSchema,
   updateUserSchema,
   insertConversationSchema,
@@ -151,6 +147,16 @@ export class UserManager {
   }
 
   /**
+   * 清除验证码
+   */
+  async clearVerificationCode(phoneNumber: string): Promise<void> {
+    await db.query(
+      'UPDATE users SET verification_code = NULL, verification_code_expires_at = NULL, updated_at = NOW() WHERE phone_number = $1',
+      [phoneNumber]
+    );
+  }
+
+  /**
    * 减少用户对话次数
    */
   async decrementUserConversations(userId: string): Promise<number> {
@@ -182,6 +188,50 @@ export class UserManager {
       [userId]
     );
     return result.rows;
+  }
+
+  /**
+   * 检查用户是否过期
+   */
+  isUserExpired(user: User): boolean {
+    if (!user.expiresAt) return false;
+    return new Date() > new Date(user.expiresAt);
+  }
+
+  /**
+   * 检查用户是否超过对话次数限制
+   */
+  isConversationLimitExceeded(user: User): boolean {
+    if (!user.maxConversations) return false;
+    return (user.usedConversations || 0) >= user.maxConversations;
+  }
+
+  /**
+   * 激活用户
+   */
+  async activateUser(userId: string, validDays: number = 7, maxConversations: number = 50): Promise<User | null> {
+    const expiresAt = new Date(Date.now() + validDays * 24 * 60 * 60 * 1000);
+    const result = await db.query(
+      `UPDATE users
+       SET activated_at = NOW(),
+           expires_at = $1,
+           max_conversations = $2,
+           updated_at = NOW()
+       WHERE id = $3
+       RETURNING *`,
+      [expiresAt, maxConversations, userId]
+    );
+    return result.rows[0] || null;
+  }
+
+  /**
+   * 增加对话次数
+   */
+  async incrementConversationCount(userId: string): Promise<void> {
+    await db.query(
+      'UPDATE users SET used_conversations = used_conversations + 1, updated_at = NOW() WHERE id = $1',
+      [userId]
+    );
   }
 }
 
@@ -220,10 +270,58 @@ export class ConversationManager {
   }
 
   /**
+   * 根据用户ID获取对话（支持选项参数）
+   */
+  async getConversationsByUserId(userId: string, options?: {
+    limit?: number;
+    skip?: number;
+    role?: string;
+  }): Promise<Conversation[]> {
+    const { limit = 50, skip = 0, role } = options || {};
+
+    let query = 'SELECT * FROM conversations WHERE user_id = $1';
+    const params: any[] = [userId];
+    let paramIndex = 2;
+
+    if (role) {
+      query += ` AND role = $${paramIndex++}`;
+      params.push(role);
+    }
+
+    query += ` ORDER BY created_at DESC LIMIT $${paramIndex++} OFFSET $${paramIndex++}`;
+    params.push(limit, skip);
+
+    const result = await db.query(query, params);
+    return result.rows;
+  }
+
+  /**
+   * 获取对话历史用于上下文（按时间升序排列）
+   */
+  async getConversationHistoryForContext(userId: string, limit = 10): Promise<Array<{ role: 'user' | 'assistant'; content: string }>> {
+    const result = await db.query(
+      'SELECT * FROM conversations WHERE user_id = $1 ORDER BY created_at ASC LIMIT $2',
+      [userId, limit]
+    );
+    return result.rows.map(conv => ({
+      role: conv.role as 'user' | 'assistant',
+      content: conv.content
+    }));
+  }
+
+  /**
    * 删除对话
    */
   async deleteConversation(conversationId: string): Promise<void> {
     await db.query('DELETE FROM conversations WHERE id = $1', [conversationId]);
+  }
+
+  /**
+   * 删除用户的所有对话
+   */
+  async deleteConversationsByUserId(userId: string): Promise<number> {
+    const result = await db.query('DELETE FROM conversations WHERE user_id = $1 RETURNING *', [userId]);
+    return result.rowCount || 0;
   }
 }
 

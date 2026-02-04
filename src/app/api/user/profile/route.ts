@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
 
     // 检查手机号是否在激活名单中
     const isInActivationList = user.phoneNumber ? 
-      await activationListManager.isPhoneNumberActivated(user.phoneNumber) : false;
+      await activationListManager.isUserActivated(user.phoneNumber) : false;
 
     // 检查用户是否已经输入了完整的命理信息
     const hasCompleteFortuneInfo = !!(
@@ -132,7 +132,7 @@ export async function PUT(request: NextRequest) {
 
     // 检查手机号是否在激活名单中
     const isActivated = currentUser.phoneNumber ?
-      await activationListManager.isPhoneNumberActivated(currentUser.phoneNumber) : false;
+      await activationListManager.isUserActivated(currentUser.phoneNumber) : false;
 
     // 检查用户是否已经输入了完整的命理信息
     const hasCompleteFortuneInfo = !!(

@@ -32,7 +32,7 @@ export async function POST(request: NextRequest) {
 
     // 如果用户不存在，检查是否在激活名单中
     if (!user) {
-      const isInActivationList = await activationListManager.isPhoneNumberActivated(phoneNumber);
+      const isInActivationList = await activationListManager.isUserActivated(phoneNumber);
       console.log(`[Login] User not found, checking activation list: ${phoneNumber}, isInActivationList: ${isInActivationList}`);
       
       if (isInActivationList) {
@@ -86,7 +86,7 @@ export async function POST(request: NextRequest) {
     // 检查是否已激活（是否有过期时间）
     if (!user.activatedAt || !user.expiresAt) {
       // 用户未激活，检查是否在激活名单中
-      const isInActivationList = await activationListManager.isPhoneNumberActivated(phoneNumber);
+      const isInActivationList = await activationListManager.isUserActivated(phoneNumber);
       console.log(`[Login] User not activated, checking activation list: ${phoneNumber}, isInActivationList: ${isInActivationList}`);
       
       if (isInActivationList) {
