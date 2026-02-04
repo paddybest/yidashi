@@ -8,7 +8,9 @@
     "preinstall": "npx only-allow pnpm",
     "lint": "eslint",
     "start": "next start",
-    "ts-check": "tsc -p tsconfig.json"
+    "ts-check": "tsc -p tsconfig.json",
+    "db:push": "drizzle-kit push",
+    "db:studio": "drizzle-kit studio"
   },
   "dependencies": {
     "@alicloud/dysmsapi20170525": "^3.0.0",
