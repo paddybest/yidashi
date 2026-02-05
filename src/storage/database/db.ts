@@ -6,11 +6,11 @@ const pool = new Pool({
   ssl: {
     rejectUnauthorized: false, // 兼容阿里云代理的加密连接
   },
-  // Serverless 环境优化配置
-  max: 2, // 增加连接数以支持重试
-  min: 0,
-  idleTimeoutMillis: 30000, // 增加闲置时间到30秒
-  connectionTimeoutMillis: 10000, // 增加连接超时时间到10秒
+  // Serverless 环境优化配置 - 针对Vercel优化
+  max: 5, // 增加连接数
+  min: 1, // 保持一个最小连接
+  idleTimeoutMillis: 60000, // 闲置时间60秒
+  connectionTimeoutMillis: 30000, // 连接超时30秒
 });
 
 // 查询函数 - 通过连接池执行查询，带重试机制
@@ -52,19 +52,42 @@ export async function query(text: string, params?: any[], maxRetries = 3) {
   throw lastError;
 }
 
+// 低级查询函数 - 直接使用连接池，不经过重试机制
+async function directQuery(text: string, params?: any[]) {
+  let client;
+  try {
+    client = await pool.connect();
+    const result = await client.query(text, params);
+    return result;
+  } catch (error: any) {
+    console.error('低级查询错误:', error);
+    throw error;
+  } finally {
+    if (client) {
+      client.release();
+    }
+  }
+}
+
 // 获取连接池（用于特殊场景）
 export function getPool() {
   return pool;
 }
 
-// 健康检查函数
+// 健康检查函数 - 直接使用连接池而不是query函数
 export async function healthCheck() {
+  let client;
   try {
-    await query('SELECT 1');
+    client = await pool.connect();
+    await client.query('SELECT 1');
     return { status: 'healthy', timestamp: new Date().toISOString() };
   } catch (error: any) {
     console.error('数据库健康检查失败:', error);
     return { status: 'unhealthy', error: error.message, timestamp: new Date().toISOString() };
+  } finally {
+    if (client) {
+      client.release();
+    }
   }
 }
 
@@ -74,6 +97,17 @@ export const db = {
   getPool,
   healthCheck,
 };
+
+// 连接池预热函数
+async function warmUpPool() {
+  try {
+    console.log('🔄 正在预热数据库连接池...');
+    await directQuery('SELECT 1');
+    console.log('✅ 数据库连接池预热完成');
+  } catch (error) {
+    console.error('❌ 数据库连接池预热失败:', error);
+  }
+}
 
 // 监控连接池状态
 pool.on('connect', () => {
@@ -91,6 +125,9 @@ pool.on('release', () => {
 pool.on('error', (err) => {
   console.error('连接池发生错误:', err);
 });
+
+// 启动时预热连接池
+warmUpPool().catch(console.error);
 
 // 应用关闭时清理连接池
 process.on('SIGINT', () => {

@@ -1,4 +1,4 @@
-import { db } from "@/storage/database/db";
+import { db, getPool } from "@/storage/database/db";
 import {
   insertUserSchema,
   updateUserSchema,
@@ -375,4 +375,4 @@ export const conversationManager = new ConversationManager();
 export const activationListManager = new ActivationListManager();
 
 // 导出数据库连接对象
-export { db };
+export { db, getPool };
