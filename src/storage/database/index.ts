@@ -373,3 +373,6 @@ export class ActivationListManager {
 export const userManager = new UserManager();
 export const conversationManager = new ConversationManager();
 export const activationListManager = new ActivationListManager();
+
+// 导出数据库连接对象
+export { db };
