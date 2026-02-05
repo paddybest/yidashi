@@ -3,9 +3,7 @@ import { Pool } from 'pg';
 // 创建数据库连接池
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: {
-    rejectUnauthorized: false, // 兼容阿里云代理的加密连接
-  },
+  ssl: false, // 禁用SSL连接，因为阿里云代理不支持
   // Serverless 环境优化配置 - 针对Vercel优化
   max: 5, // 增加连接数
   min: 1, // 保持一个最小连接
