@@ -3,6 +3,7 @@ import { Client } from 'pg';
 // 创建数据库客户端
 const client = new Client({
   connectionString: process.env.DATABASE_URL,
+  ssl: false, // 禁用SSL连接
 });
 
 // 连接数据库
