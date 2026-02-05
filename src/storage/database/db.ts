@@ -7,26 +7,49 @@ const pool = new Pool({
     rejectUnauthorized: false, // 兼容阿里云代理的加密连接
   },
   // Serverless 环境优化配置
-  max: 1, // 限制最大连接数，防止连接数爆炸
-  idleTimeoutMillis: 10000, // 连接在池中最大闲置时间（10秒）
-  connectionTimeoutMillis: 5000, // 连接超时时间（5秒）
+  max: 2, // 增加连接数以支持重试
+  min: 0,
+  idleTimeoutMillis: 30000, // 增加闲置时间到30秒
+  connectionTimeoutMillis: 10000, // 增加连接超时时间到10秒
 });
 
-// 查询函数 - 通过连接池执行查询
-export async function query(text: string, params?: any[]) {
-  let client;
-  try {
-    client = await pool.connect();
-    const result = await client.query(text, params);
-    return result;
-  } catch (error) {
-    console.error('数据库查询错误:', error);
-    throw error;
-  } finally {
-    if (client) {
-      client.release(); // 释放连接回连接池
+// 查询函数 - 通过连接池执行查询，带重试机制
+export async function query(text: string, params?: any[], maxRetries = 3) {
+  let lastError;
+
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    let client;
+    try {
+      client = await pool.connect();
+      const result = await client.query(text, params);
+      return result;
+    } catch (error: any) {
+      lastError = error;
+      console.error(`数据库查询错误 (尝试 ${attempt}/${maxRetries}):`, error.message);
+
+      // 如果是连接问题，等待一段时间再重试
+      if (attempt < maxRetries && (
+        error.message.includes('Connection terminated') ||
+        error.message.includes('connection timeout') ||
+        error.message.includes('ECONNRESET') ||
+        error.message.includes('ETIMEDOUT')
+      )) {
+        console.log(`等待 ${attempt * 2} 秒后重试...`);
+        await new Promise(resolve => setTimeout(resolve, attempt * 2000));
+        continue;
+      }
+
+      // 其他错误直接抛出
+      throw error;
+    } finally {
+      if (client) {
+        client.release(); // 释放连接回连接池
+      }
     }
   }
+
+  // 所有重试都失败了，抛出最后的错误
+  throw lastError;
 }
 
 // 获取连接池（用于特殊场景）
