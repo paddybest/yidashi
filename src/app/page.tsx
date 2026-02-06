@@ -212,18 +212,7 @@ export default function HomePage() {
           {/* 说明 */}
           <div className="mt-6 text-center text-xs text-muted-foreground">
             <p>首次登录需要先完成支付激活账户</p>
-            <p className="mt-2">
-              还未购买？{' '}
-              <Link href="/purchase" className="text-orange-600 hover:underline font-medium">
-                立即购买服务
-              </Link>
-            </p>
-            <p className="mt-1">
-              <Link href="/admin" className="text-orange-600 hover:underline">
-                管理员入口
-              </Link>
-            </p>
-          </div>
+                                  </div>
         </Card>
       </div>
     </div>
