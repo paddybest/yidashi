@@ -4,7 +4,7 @@ import { sql } from "drizzle-orm"
 
 
 export const users = pgTable("users", {
-	id: varchar({ length: 36 }).default(gen_random_uuid()).primaryKey().notNull(),
+	id: varchar({ length: 36 }).default(sql`gen_random_uuid()`).primaryKey().notNull(),
 	phoneNumber: varchar("phone_number", { length: 20 }).notNull(),
 	verificationCode: varchar("verification_code", { length: 6 }),
 	verificationCodeExpiresAt: timestamp("verification_code_expires_at", { withTimezone: true, mode: 'string' }),
@@ -30,7 +30,7 @@ export const users = pgTable("users", {
 ]);
 
 export const conversations = pgTable("conversations", {
-	id: varchar({ length: 36 }).default(gen_random_uuid()).primaryKey().notNull(),
+	id: varchar({ length: 36 }).default(sql`gen_random_uuid()`).primaryKey().notNull(),
 	userId: varchar("user_id", { length: 36 }).notNull(),
 	role: varchar({ length: 10 }).notNull(),
 	content: text().notNull(),
@@ -48,7 +48,7 @@ export const conversations = pgTable("conversations", {
 ]);
 
 export const activationList = pgTable("activation_list", {
-	id: varchar({ length: 36 }).default(gen_random_uuid()).primaryKey().notNull(),
+	id: varchar({ length: 36 }).default(sql`gen_random_uuid()`).primaryKey().notNull(),
 	phoneNumber: varchar("phone_number", { length: 20 }).notNull(),
 	activatedBy: varchar("activated_by", { length: 128 }),
 	notes: text(),
